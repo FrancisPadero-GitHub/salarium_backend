@@ -1,59 +1,48 @@
-# SUPABASE CLI COMMANDS
+# Supabase CLI Commands Reference
 
-Below is a **practical Supabase CLI command reference**, focused only on commands you will actually use in this architecture, with brief and accurate descriptions.
+A **practical Supabase CLI cheat sheet**, focused on commands you'll actually use, with brief, accurate descriptions.
 
 ---
 
-## 1. Project and Setup
+## 1. Project Setup
 
 ### `supabase init`
 
-Initializes Supabase in your repository.
-Creates the `supabase/` folder with config, migrations, and functions.
-
----
+* Initializes Supabase in your repository.
+* Creates the `supabase/` folder with config, migrations, and functions.
 
 ### `supabase link`
 
-Links your local project to a **hosted Supabase project**.
-Stores the project reference and connects CLI actions to that backend.
+* Connects your local project to a **hosted Supabase project**.
+* Stores project reference and links CLI actions to the backend.
 
 ---
 
-## 2. Database and Migrations
+## 2. Database & Migrations
 
 ### `supabase migration new <name>`
 
-Creates a new timestamped SQL migration file.
-Used for tables, RLS, RPCs, triggers, indexes.
-
----
+* Creates a new timestamped SQL migration file.
+* Use for tables, RLS, RPCs, triggers, indexes.
 
 ### `supabase db push`
 
-Executes all pending migrations on the **hosted Supabase database**.
-This is how schema changes are applied.
-
----
+* Applies all pending migrations to the **hosted database**.
 
 ### `supabase db pull`
 
-Pulls the current remote database schema into a migration file.
-Used when adopting an existing Supabase project.
-
----
+* Pulls the current remote database schema into a migration file.
+* Useful when adopting an existing project.
 
 ### `supabase db reset`
 
-Drops and recreates the local database, then reapplies migrations.
-Used only with local Supabase.
-
----
+* Drops and recreates the local database, then reapplies migrations.
+* Use only with local Supabase.
 
 ### `supabase db diff`
 
-Shows the SQL difference between two database states.
-Useful for generating migrations safely.
+* Shows SQL differences between two database states.
+* Helps generate migrations safely.
 
 ---
 
@@ -61,20 +50,16 @@ Useful for generating migrations safely.
 
 ### `supabase start`
 
-Starts a full local Supabase stack using Docker.
-Includes Postgres, Auth, Storage, Realtime.
-
----
+* Starts a full local Supabase stack via Docker.
+* Includes Postgres, Auth, Storage, Realtime.
 
 ### `supabase stop`
 
-Stops the local Supabase services.
-
----
+* Stops local Supabase services.
 
 ### `supabase status`
 
-Shows running services, ports, and local URLs.
+* Shows running services, ports, and local URLs.
 
 ---
 
@@ -82,49 +67,38 @@ Shows running services, ports, and local URLs.
 
 ### `supabase functions new <name>`
 
-Creates a new Edge Function scaffold.
-Generates `supabase/functions/<name>/index.ts`.
-
----
+* Creates a new Edge Function scaffold.
+* Generates `supabase/functions/<name>/index.ts`.
 
 ### `supabase functions deploy <name>`
 
-Deploys an Edge Function to **hosted Supabase**.
-Makes it available at `/functions/v1/<name>`.
-
----
+* Deploys an Edge Function to **hosted Supabase**.
+* Available at `/functions/v1/<name>`.
 
 ### `supabase functions serve`
 
-Runs Edge Functions locally for testing.
-Requires local Supabase running.
-
----
+* Runs Edge Functions locally for testing.
+* Requires local Supabase running.
 
 ### `supabase functions delete <name>`
 
-Deletes a deployed Edge Function from Supabase.
+* Deletes a deployed Edge Function from Supabase.
 
 ---
 
-## 5. Secrets and Environment Variables
+## 5. Secrets & Environment Variables
 
 ### `supabase secrets set KEY=value`
 
-Sets environment variables for Edge Functions.
-Used for API keys and secrets.
-
----
+* Sets environment variables for Edge Functions (e.g., API keys).
 
 ### `supabase secrets list`
 
-Lists all secrets configured for the project.
-
----
+* Lists all configured secrets.
 
 ### `supabase secrets unset KEY`
 
-Removes a previously set secret.
+* Removes a previously set secret.
 
 ---
 
@@ -132,36 +106,31 @@ Removes a previously set secret.
 
 ### `supabase gen types typescript`
 
-Sample actual command - npx supabase gen types typescript --project-id xbrjymsimswevrifeeiz > database.types.ts
-
-Generates TypeScript types from your database schema.
-Used for type safe frontend development.
+* Example: `npx supabase gen types typescript --project-id xbrjymsimswevrifeeiz > database.types.ts`
+* Generates TypeScript types from your database schema.
+* Enables type-safe frontend development.
 
 ---
 
-## 7. Admin and Utility
+## 7. Admin & Utility
 
 ### `supabase login`
 
-Authenticates the CLI with your Supabase account.
-
----
+* Authenticates CLI with your Supabase account.
 
 ### `supabase projects list`
 
-Lists all Supabase projects under your account.
-
----
+* Lists all Supabase projects under your account.
 
 ### `supabase help`
 
-Shows all available commands and options.
+* Displays all available commands and options.
 
 ---
 
-## 8. Commands You Will Use Most Often
+## 8. Frequently Used Commands
 
-Daily workflow:
+**Daily Workflow:**
 
 ```bash
 supabase migration new add_budget_tables
@@ -169,14 +138,14 @@ supabase db push
 supabase functions deploy budget-summary
 ```
 
-Occasional:
+**Occasional:**
 
 ```bash
 supabase gen types typescript
 supabase secrets set OPENAI_API_KEY=...
 ```
 
-Optional local:
+**Optional Local:**
 
 ```bash
 supabase start
@@ -187,22 +156,22 @@ supabase db reset
 
 ## 9. What You Do NOT Need
 
-- No custom server
-- No ORM migrations
-- No separate backend deployment
-- No manual dashboard schema edits
+* Custom server
+* ORM migrations
+* Separate backend deployment
+* Manual dashboard schema edits
 
 ---
 
-## One Sentence Summary
+## One-Sentence Summary
 
 Supabase CLI lets you manage **database schema, RPCs, triggers, Edge Functions, and secrets** as versioned code and deploy them safely to hosted Supabase.
 
 ---
 
-If you want next:
+## Next Steps / Extras
 
-- A printable cheat sheet
-- Feature to command mapping
-- Example CI pipeline using these commands
-- Common mistakes and safe practices
+* Printable cheat sheet
+* Feature-to-command mapping
+* Example CI pipeline using these commands
+* Common mistakes and safe practices
