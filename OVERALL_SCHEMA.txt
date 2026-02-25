@@ -1,0 +1,217 @@
+SCHEMA 
+Technicians
+
+create table public.technicians (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  default_commission_rate numeric(5,2) not null default 75.00, -- 75.00 means 75%
+  created_at timestamptz not null default now()
+);
+
+Jobs Table 
+
+-- ENUM type for payment modes
+CREATE TYPE payment_mode_enum AS ENUM ('credit card', 'cash', 'check', 'zelle');
+
+create table public.jobs (
+  id uuid primary key default gen_random_uuid(),
+
+  job_date date not null,
+  address text,
+  region text,
+
+  technician_id uuid references public.technicians(id) on delete set null,
+
+  parts_total_cost numeric(12,2) not null default 0.00,
+  tip_amount numeric(12,2) not null default 0.00,
+  subtotal numeric(12,2) not null,
+  total_amount numeric(12,2) generated always as (subtotal + tip_amount) stored,
+
+  payment_mode payment_mode_enum,
+  cash_on_hand numeric(12,2) not null default 0.00,
+  status text not null default 'pending',
+  notes text,
+
+  created_at timestamptz not null default now()
+);
+
+Parts table 
+
+create table public.parts (
+  id uuid primary key default gen_random_uuid(),
+
+  job_id uuid not null references public.jobs(id) on delete cascade,
+
+  name text not null,
+  unit_cost numeric(12,2) not null,
+  quantity integer not null check (quantity > 0),
+
+  amount numeric(12,2) generated always as (unit_cost * quantity) stored,
+
+  created_at timestamptz not null default now()
+);
+
+
+Estimates / Qoutations Table
+
+create table public.estimates (
+  id uuid primary key default gen_random_uuid(),
+
+  estimate_date date not null,
+  address text,
+  description text,
+  amount numeric(12,2) not null,
+
+  technician_id uuid references public.technicians(id) on delete set null,
+
+  status text not null default 'pending',
+  handled_by text,
+  notes text,
+
+  created_at timestamptz not null default now()
+);
+
+-- FUNCTIONS --
+
+Auto Update Jobs.parts_total_cost
+
+create or replace function public.update_job_parts_total()
+returns trigger as $$
+begin
+  update public.jobs
+  set parts_total_cost = (
+    select coalesce(sum(amount),0)
+    from public.parts
+    where job_id = coalesce(new.job_id, old.job_id)
+  )
+  where id = coalesce(new.job_id, old.job_id);
+
+  return null;
+end;
+$$ language plpgsql;
+
+!! Trigger !!
+
+create trigger trigger_update_job_parts_total
+after insert or update or delete on public.parts
+for each row
+execute function public.update_job_parts_total();
+
+
+
+-- VIEWS --
+
+Financials
+
+create view public.job_financials as
+select
+  j.id,
+  j.subtotal as gross,
+  j.parts_total_cost,
+  (j.subtotal - j.parts_total_cost) as net,
+  j.tip_amount,
+  j.total_amount,
+  j.status,
+  j.technician_id,
+  j.cash_on_hand,
+  (j.subtotal - j.cash_on_hand) as balance
+from public.jobs j;
+
+Core financial breakdown view
+
+create or replace view public.v_job_financial_breakdown as
+select
+  j.id,
+  j.job_date,
+  j.status,
+  j.region,
+  j.technician_id,
+
+  j.subtotal as gross,
+  j.parts_total_cost,
+  (j.subtotal - j.parts_total_cost) as net,
+
+  j.tip_amount,
+  j.total_amount as total_collected,
+
+  (j.total_amount - j.parts_total_cost) as net_plus_tip,
+
+  j.cash_on_hand,
+  (j.subtotal - j.cash_on_hand) as balance
+
+from public.jobs j;
+
+In-House Split (75 / 25)
+
+create or replace view public.v_job_split_inhouse as
+select
+  f.*,
+  (f.net * 0.75) as technician_pay,
+  (f.net * 0.25) as company_profit
+from public.v_job_financial_breakdown f;
+
+Sub-Contractor Split (50 / 50)
+
+create or replace view public.v_job_split_subcontractor as
+select
+  f.*,
+  (f.net * 0.50) as subcontractor_pay,
+  (f.net * 0.50) as company_profit
+from public.v_job_financial_breakdown f;
+
+
+
+
+Technician Performance Summary
+
+create or replace view public.v_technician_summary as
+select
+  t.id as technician_id,
+  t.name,
+
+  count(j.id) as total_jobs,
+
+  coalesce(sum(j.subtotal),0) as total_gross,
+  coalesce(sum(j.parts_total_cost),0) as total_parts_cost,
+  coalesce(sum(j.subtotal - j.parts_total_cost),0) as total_net,
+
+  coalesce(sum((j.subtotal - j.parts_total_cost) * 0.75),0) as estimated_payout_75_model
+
+from public.technicians t
+left join public.jobs j
+  on j.technician_id = t.id
+  and j.status = 'done'
+group by t.id, t.name;
+
+
+Company Revenue Summary
+
+create or replace view public.v_company_summary as
+select
+  count(id) as total_jobs,
+
+  coalesce(sum(subtotal),0) as total_gross,
+  coalesce(sum(parts_total_cost),0) as total_parts_cost,
+  coalesce(sum(subtotal - parts_total_cost),0) as total_net,
+
+  coalesce(sum((subtotal - parts_total_cost) * 0.25),0) as projected_company_profit_75_model
+
+from public.jobs
+where status = 'done';
+
+
+Monthly Revenue Report
+
+create or replace view public.v_monthly_financials as
+select
+  date_trunc('month', job_date) as month,
+
+  count(id) as jobs_completed,
+  sum(subtotal) as gross,
+  sum(parts_total_cost) as parts_cost,
+  sum(subtotal - parts_total_cost) as net
+
+from public.jobs
+where status = 'done'
+group by 1
+order by 1 desc;
