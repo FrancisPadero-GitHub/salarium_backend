@@ -4,6 +4,9 @@ Technicians
 create table public.technicians (
   id uuid primary key default gen_random_uuid(),
   name text not null,
+  email text,
+  phone text,
+  hired_date date,
   default_commission_rate numeric(5,2) not null default 75.00, -- 75.00 means 75%
   created_at timestamptz not null default now()
 );
@@ -168,6 +171,10 @@ create or replace view public.v_technician_summary as
 select
   t.id as technician_id,
   t.name,
+  t.email,
+  t.phone,
+  t.hired_date,
+  t.default_commission_rate as commission_rate,
 
   count(j.id) as total_jobs,
 
@@ -175,13 +182,13 @@ select
   coalesce(sum(j.parts_total_cost),0) as total_parts_cost,
   coalesce(sum(j.subtotal - j.parts_total_cost),0) as total_net,
 
-  coalesce(sum((j.subtotal - j.parts_total_cost) * 0.75),0) as estimated_payout_75_model
+  coalesce(sum(j.subtotal * (t.default_commission_rate / 100.0)),0) as total_earned
 
 from public.technicians t
 left join public.jobs j
   on j.technician_id = t.id
   and j.status = 'done'
-group by t.id, t.name;
+group by t.id, t.name, t.email, t.phone, t.hired_date, t.default_commission_rate;
 
 
 Company Revenue Summary
